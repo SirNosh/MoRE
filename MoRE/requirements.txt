@@ -1,0 +1,8 @@
+torch
+numpy
+tqdm
+requests
+datasets
+transformers
+sentencepiece
+tensorboard 

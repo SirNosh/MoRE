@@ -1,0 +1,196 @@
+# MoE-Huginn Configuration
+# This configuration combines Mixture-of-Experts with Huginn's recurrent architecture
+
+model:
+  name: "moe-huginn-3.5b"
+  architecture_class_name: "RecurrentGPT"
+  
+  # Base Huginn parameters
+  d_model: 2560
+  n_heads: 20
+  n_layers_prelude: 4
+  n_layers_core: 1
+  n_layers_coda: 4
+  vocab_size: 131072
+  mean_recurrence: 16
+  block_size: 4096
+  n_embd: 2560
+  intermediate_size: 10240
+  num_attention_heads: 20
+  
+  # MoE specific parameters
+  num_experts: 8
+  moe_k: 2
+  moe_expansion_factor: 2.0
+  
+  # Other parameters
+  norm_eps: 1e-5
+  init_std: 0.02
+  mlp_ratio: 4.0
+  dropout: 0.1
+  bias: false
+  norm_class_name: "RMSNorm"
+  mlp_class_name: "GatedMLP"
+  nonlin_name: "GELU"
+  injection_type: "add"
+  sampling_scheme: "poisson-unbounded"
+  mean_backprop_depth: 8
+
+training:
+  # MoE auxiliary loss weight
+  moe_aux_loss_weight: 0.01
+  
+  # Training parameters
+  batch_size: 16384
+  learning_rate: 1e-4
+  warmup_steps: 2000
+  max_steps: 100000
+  
+  # Recurrence sampling
+  mean_recurrence: 16
+  truncated_backprop_steps: 8
+  
+  # Gradient settings
+  grad_clip: 1.0
+  gradient_accumulation_steps: 1
+  
+  # Mixed precision
+  precision: "bf16-mixed"
+  
+  # Checkpointing
+  save_interval: 1000
+  eval_interval: 500
+
+data:
+  dataset: "tomg-group-umd/huginn-dataset"
+  max_tokens: 800_000_000_000  # 800B tokens like original Huginn
+  
+  # Data loading
+  num_workers: 4
+  pin_memory: true
+
+monitoring:
+  # MoE specific monitoring
+  log_moe_metrics: true
+  log_expert_utilization: true
+  log_router_collapse: true
+  log_expert_preference: true
+  
+  # Logging intervals
+  log_interval: 10
+  log_moe_charts_interval: 100  # Less frequent for charts
+  
+  # WandB integration
+  use_wandb: true
+  wandb_project: "moe-huginn"
+  wandb_entity: null  # Set your username here
+  
+  # MoE metrics to track
+  moe_metrics:
+    - "load_balance_loss"
+    - "routing_entropy"
+    - "expert_utilization"
+    - "expert_diversity"
+    - "gini_coefficient"
+    - "router_collapse_warning"
+    - "attention_spread"
+    - "per_expert_metrics"
+
+# MoE Architecture Details
+moe_architecture:
+  # Shared Expert MoE (S-MoE)
+  type: "shared_expert"
+  shared_expert: true
+  specialized_experts: 8
+  top_k: 2
+  
+  # Expert structure
+  expert_type: "SwiGLU"
+  expert_expansion: 2.0
+  
+  # Router settings
+  router_type: "linear"
+  router_temperature: 1.0
+  
+  # Load balancing
+  load_balancing: true
+  load_balancing_loss_weight: 0.01
+  
+  # Expert specialization
+  enable_expert_specialization: true
+  expert_specialization_loss_weight: 0.001
+
+# Recurrent Block Integration
+recurrent_integration:
+  # Ensure expert-modified inputs are used in every iteration
+  use_expert_modified_inputs: true
+  
+  # Input injection strategy
+  injection_type: "add"  # add, gate, linear, ffn
+  
+  # Noise injection for training stability
+  intermediate_noise_injection: 0.0
+  geom_noise_injection: "geom"
+  
+  # State initialization
+  state_init: "like-init"
+  
+  # Recurrence sampling
+  sampling_scheme: "poisson-unbounded"
+  mean_recurrence: 16
+  mean_backprop_depth: 8
+
+# Evaluation and Testing
+evaluation:
+  # Benchmark tasks
+  tasks:
+    - "gsm8k"
+    - "math"
+    - "arc_easy"
+    - "hellaswag"
+    - "mmlu"
+  
+  # MoE specific evaluation
+  moe_evaluation:
+    - "expert_utilization_balance"
+    - "router_collapse_detection"
+    - "expert_specialization_analysis"
+    - "load_balancing_quality"
+  
+  # Recurrence analysis
+  recurrence_analysis:
+    - "expert_modified_input_consistency"
+    - "recurrent_block_stability"
+    - "convergence_analysis"
+
+# Hardware and Optimization
+hardware:
+  # GPU requirements
+  gpus: 8
+  gpu_memory: "80GB"
+  
+  # Mixed precision
+  use_amp: true
+  amp_dtype: "bfloat16"
+  
+  # Gradient checkpointing
+  gradient_checkpointing: true
+  activation_checkpoint_impl: "per-iteration"
+  
+  # Memory optimization
+  use_gradient_accumulation: true
+  max_grad_norm: 1.0
+
+# Debugging and Development
+debug:
+  # Enable detailed logging
+  verbose: true
+  
+  # Track detailed MoE metrics
+  track_detailed_moe_metrics: true
+  
+  # Validate expert-modified input consistency
+  validate_expert_input_consistency: true
+  
+  # Router collapse early warning
+  router_collapse_early_warning: true

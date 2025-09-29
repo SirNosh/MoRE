@@ -1,0 +1,44 @@
+# Launch config for the 700M Raven baseline model.
+# Example launch command:
+# sbatch -N 64 -J raven-700m-baseline launch_frontier.py --config_file launch_configs/raven_700m_baseline.yaml
+
+globals:
+  run_name: "raven-700m-baseline"
+  model_name: "huginn_raven_700m" # This points to your new model
+  # data settings:
+  train_data_dir: "/path/to/your/training_data"
+  val_data_dir: "/path/to/your/validation_data"
+  tokenizer_path: "/path/to/your/tokenizer"
+  # checkpointing:
+  out_dir: "/path/to/your/checkpoints/${globals.run_name}"
+  # hardware:
+  fabric_strategy: "fsdp_hybrid"
+  fabric_precision: "bf16-mixed"
+  # logging:
+  logger_project: "recurrent-pretraining"
+
+# Command-line arguments to train.py
+CLI:
+  model_name: ${globals.model_name}
+  out_dir: ${globals.out_dir}
+  run_name: ${globals.run_name}
+  # data:
+  train_data_dir: ${globals.train_data_dir}
+  val_data_dir: ${globals.val_data_dir}
+  tokenizer_path: ${globals.tokenizer_path}
+  # hardware:
+  fabric_strategy: ${globals.fabric_strategy}
+  fabric_precision: ${globals.fabric_precision}
+  # logging:
+  logger_project: ${globals.logger_project}
+  # training settings:
+  world_batch_size: 2048
+  micro_batch_size: 8
+  max_steps: 25000 # Adjusted for a potentially longer run
+  warmup_steps: 200
+  cooldown_steps: 2000
+  lr_schedule: "cosine"
+  optim_config:
+    lr: 0.0005 # Learning rate might need tuning for a smaller model
+  save_step_interval: 1000
+  eval_step_interval: 1000
