@@ -1,18 +1,18 @@
 # Launch config for the 700M Raven baseline model.
 # Example launch command:
-# sbatch -N 64 -J raven-700m-baseline launch_frontier.py --config_file launch_configs/raven_700m_baseline.yaml
+# python launch_arctic.py --config launch_configs/raven_700m_baseline.yaml --run_name raven-700m-run --gpus_per_node 1 --dryrun
 
 globals:
   run_name: "raven-700m-baseline"
   model_name: "huginn_raven_700m" # This points to your new model
   # data settings:
-  train_data_dir: "/path/to/your/training_data"
-  val_data_dir: "/path/to/your/validation_data"
-  tokenizer_path: "/path/to/your/tokenizer"
+  train_data_dir: "/path/to/your/training_data" # UPDATE THIS
+  val_data_dir: "/path/to/your/validation_data"   # UPDATE THIS
+  tokenizer_path: "/path/to/your/tokenizer"       # UPDATE THIS
   # checkpointing:
-  out_dir: "/path/to/your/checkpoints/${globals.run_name}"
+  out_dir: "/path/to/your/checkpoints/${globals.run_name}" # UPDATE THIS
   # hardware:
-  fabric_strategy: "fsdp_hybrid"
+  fabric_strategy: "auto" # Changed from fsdp_hybrid for broader compatibility (ddp/fsdp auto-select)
   fabric_precision: "bf16-mixed"
   # logging:
   logger_project: "recurrent-pretraining"
@@ -34,7 +34,7 @@ CLI:
   # training settings:
   world_batch_size: 2048
   micro_batch_size: 8
-  max_steps: 25000 # Adjusted for a potentially longer run
+  max_steps: 40000 # Updated for 160B tokens (approx 40k steps @ 4M tokens/batch)
   warmup_steps: 200
   cooldown_steps: 2000
   lr_schedule: "cosine"
@@ -42,3 +42,11 @@ CLI:
     lr: 0.0005 # Learning rate might need tuning for a smaller model
   save_step_interval: 1000
   eval_step_interval: 1000
+  # Dataset override for Preprocessed Parquet format
+  data_config:
+    train_data:
+      - type: 'pqds-pure'
+        data_dir: '/data/temp-scratch/dvyas4/huginn_160B_train'
+    val_data:
+      - type: 'pqds-pure'
+        data_dir: '/data/temp-scratch/dvyas4/huginn_160B_val'
